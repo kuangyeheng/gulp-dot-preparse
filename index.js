@@ -9,16 +9,19 @@ var PLUGIN_NAME = 'gulp-dot-preparse';
 
 var opts = {};
 
-var defFilesName;
-
 var transFn = function (fileContents,opts,cb) {
 	//do something with file contents
 	cb(fileContents);
 };
 
-var injectDefChunk = function () {
-	for (var i = 0; i < defFilesName.length; i++) {
-		opts.__includes[gutil.replaceExtension(path.relative(opts.__root,defFilesName[i]),'')] = readData(defFilesName[i]);
+opts.__proto__.injectDefChunk = function (defPaths) {
+	for (var i = 0; i < defPaths.length; i++) {
+		var defName = path.basename(defPaths[i],path.extname(defPaths[i]));
+		if (opts.__includes[defName]) {
+			gutil.log(gutil.colors.bold.red(path.basename(defPaths[i]) + '文件有重复，只会选取路径最浅的那个，也就是第一个'));
+			continue;
+		}
+		opts.__includes[defName] = readData(defPaths[i]);
 	}
 };
 
@@ -53,9 +56,9 @@ module.exports = function (options) {
 		this.__includes		= {};
 	}).call(opts,options);
 	
-	defFilesName = glob.sync(path.join(opts.__root,'/**/*.def'));
+	var defPaths = glob.sync(path.join(opts.__root,'/**/*.def'));
 	
-	injectDefChunk();
+	opts.injectDefChunk(defPaths);
 	
 	console.log(opts);
 	
