@@ -1,6 +1,6 @@
 # gulp-dot-preparse
 
-> Compile [dot](https://github.com/olado) template to UMD `.js` file
+> Compile [dot](https://github.com/olado/doT) template to UMD `.js` file
 
 ## Install
 
