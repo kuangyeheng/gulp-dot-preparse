@@ -25,6 +25,41 @@ opts.__proto__.injectDefChunk = function (defPaths) {
 	}
 };
 
+opts.__proto__.compile_to_UMD_module = function (modulename, template, def) {
+	def = def || {};
+	var defs = copy(this.__includes, copy(def))
+		, settings = this.__settings || doT.templateSettings
+		, compileoptions = copy(settings)
+		, defaultcompiled = doT.template(template, settings, defs)
+		, exports = []
+		, compiled = ""
+		, fn;
+	
+	for (var property in defs) {
+		if (defs[property] !== def[property] && defs[property] !== this.__includes[property]) {
+			fn = undefined;
+			if (typeof defs[property] === 'string') {
+				fn = doT.template(defs[property], settings, defs);
+			} else if (typeof defs[property] === 'function') {
+				fn = defs[property];
+			} else if (defs[property].arg) {
+				compileoptions.varname = defs[property].arg;
+				fn = doT.template(defs[property].text, compileoptions, defs);
+			}
+			if (fn) {
+				compiled += fn.toString().replace('anonymous', property);
+				exports.push(property);
+			}
+		}
+	}
+	compiled += defaultcompiled.toString().replace('anonymous', modulename);
+	return "(function(){" + compiled
+		   + "var itself=" + modulename + ", _encodeHTML=(" + doT.encodeHTMLSource.toString() + "(" + (settings.doNotSkipEncoded || '') + "));"
+		   + addexports(exports)
+		   + "if(typeof module!=='undefined' && module.exports) module.exports=itself;else if(typeof define==='function')define(function(){return itself;});else {"
+		   + this.__global + "=" + this.__global + "||{};" + this.__global + "['" + modulename + "']=itself;}}());";
+};
+
 var readData = function (path) {
 	var data = fs.readFileSync(path);
 	if (data) return data.toString();
