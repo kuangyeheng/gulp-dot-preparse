@@ -7,9 +7,16 @@ var glob = require('glob');
 
 var PLUGIN_NAME = 'gulp-dot-preparse';
 
-var opts = {};
+var opts;
 
-opts.__proto__.injectDefChunk = function (defPaths) {
+var OPTS = function (o) {
+	this.__root 		= o.root? path.resolve(o.root) : path.resolve(process.cwd());
+	this.__global		= o.global || 'window.dotTemplateRender';
+	this.__settings 	= o.templateSettings ? copy(o.templateSettings, copy(doT.templateSettings)) : undefined;
+	this.__includes		= {};
+};
+
+OPTS.prototype.injectDefChunk = function (defPaths) {
 	for (var i = 0; i < defPaths.length; i++) {
 		var defName = path.basename(defPaths[i],path.extname(defPaths[i]));
 		if (opts.__includes[defName]) {
@@ -20,7 +27,7 @@ opts.__proto__.injectDefChunk = function (defPaths) {
 	}
 };
 
-opts.__proto__.compile_to_UMD_module = function (modulename, template, def) {
+OPTS.prototype.compile_to_UMD_module = function (modulename, template, def) {
 	def = def || {};
 	var defs = copy(this.__includes, copy(def))
 		, settings = this.__settings || doT.templateSettings
@@ -79,12 +86,7 @@ var copy = function (o,to) {
 
 module.exports = function (options) {
 	options = options || {};
-	(function (o) {
-		this.__root 		= o.root? path.resolve(o.root) : path.resolve(process.cwd());
-		this.__global		= o.global || 'window.dotTemplateRender';
-		this.__settings 	= o.templateSettings ? copy(o.templateSettings, copy(doT.templateSettings)) : undefined;
-		this.__includes		= {};
-	}).call(opts,options);
+	opts = new OPTS(options);
 	
 	var defPaths = glob.sync(path.join(opts.__root,'/**/*.def'));
 	
