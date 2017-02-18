@@ -23,6 +23,13 @@
         "semi": [
             "error",
             "always"
-        ]
+        ],
+		"no-mixed-spaces-and-tabs": [
+			"warn"
+		],
+		"no-console": [
+			"warn",
+			{ "allow": ["warn", "error"] }
+		]
     }
 }
