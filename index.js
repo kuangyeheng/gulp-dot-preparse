@@ -27,7 +27,7 @@ OPTS.prototype.injectDefChunk = function (defPaths) {
 	}
 };
 
-OPTS.prototype.compile_to_UMD_module = function (modulename, template, def) {
+OPTS.prototype.compile_to_UMD_module = function (nameObj, template, def) {
 	def = def || {};
 	var defs = copy(this.__includes, copy(def))
 		, settings = this.__settings || doT.templateSettings
@@ -54,12 +54,12 @@ OPTS.prototype.compile_to_UMD_module = function (modulename, template, def) {
 			}
 		}
 	}
-	compiled += defaultcompiled.toString().replace('anonymous', modulename);
+	compiled += defaultcompiled.toString().replace('anonymous', nameObj.modulename);
 	return "(function(){" + compiled
-		   + "var itself=" + modulename + ", _encodeHTML=(" + doT.encodeHTMLSource.toString() + "(" + (settings.doNotSkipEncoded || '') + "));"
+		   + "var itself=" + nameObj.modulename + ", _encodeHTML=(" + doT.encodeHTMLSource.toString() + "(" + (settings.doNotSkipEncoded || '') + "));"
 		   + addExports(exports)
 		   + "if(typeof module!=='undefined' && module.exports) module.exports=itself;else if(typeof define==='function')define(function(){return itself;});else {"
-		   + this.__global + "=" + this.__global + "||{};" + this.__global + "['" + modulename + "']=itself;}}());";
+		   + this.__global + "=" + this.__global + "||{};" + this.__global + "['" + nameObj.modulename_source + "']=itself;}}());";
 };
 
 var readData = function (path) {
@@ -105,15 +105,15 @@ module.exports = function (options) {
 		if (file.isBuffer()) {
 			var fileContents = file.contents.toString();
 			var ext = path.extname(file.path);
-			var fileName = path.basename(file.path);
-			var fileNameWithOutExt = path.basename(file.path,ext);
+			var modulename_source = path.basename(file.path,ext);
+			var modulename = modulename_source.replace(/\-/g,'').toUpperCase();
 			
 			if (!/\.jst/.test(ext)) {
 				return cb(new gutil.PluginError(PLUGIN_NAME, 'File extname is not supported'));
 			}
 			
 			file.path = gutil.replaceExtension(file.path, '.js');
-			file.contents = new Buffer(opts.compile_to_UMD_module(fileNameWithOutExt, fileContents));
+			file.contents = new Buffer(opts.compile_to_UMD_module({modulename: modulename,modulename_source: modulename_source}, fileContents));
 			_this.push(file);
 			cb();
 		}
